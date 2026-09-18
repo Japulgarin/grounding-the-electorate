@@ -1,0 +1,4 @@
+app/generated/explorer.sqlite
+app/generated/sv_census.json
+__pycache__/
+*.pyc

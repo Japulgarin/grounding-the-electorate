@@ -1,0 +1,58 @@
+{
+  "Donald Trump": {
+    "file": "candidate_0.jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:Donald_Trump_official_portrait.jpg",
+    "credit": "Shealeah Craighead",
+    "license": "Public domain",
+    "title": "File:Donald Trump official portrait.jpg",
+    "image_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/5/56/Donald_Trump_official_portrait.jpg/250px-Donald_Trump_official_portrait.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail"
+  },
+  "Kamala Harris": {
+    "file": "candidate_1.jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:Kamala_Harris_Vice_Presidential_Portrait.jpg",
+    "credit": "Lawrence Jackson",
+    "license": "Public domain",
+    "title": "File:Kamala Harris Vice Presidential Portrait.jpg",
+    "image_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/4/41/Kamala_Harris_Vice_Presidential_Portrait.jpg/250px-Kamala_Harris_Vice_Presidential_Portrait.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail"
+  },
+  "Nayib Bukele": {
+    "file": "candidate_2.jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:Presidente_Bukele.jpg",
+    "credit": "AndreX",
+    "license": "CC BY-SA 4.0",
+    "title": "File:Presidente Bukele.jpg",
+    "image_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/6/6c/Presidente_Bukele.jpg/250px-Presidente_Bukele.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail"
+  },
+  "Luiz Inácio Lula da Silva": {
+    "file": "candidate_3.jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:Foto_oficial_de_Luiz_In%C3%A1cio_Lula_da_Silva_(estreita).jpg",
+    "credit": "Palácio do Planalto from Brasilia, Brasil",
+    "license": "CC BY 2.0",
+    "title": "File:Foto oficial de Luiz Inácio Lula da Silva (estreita).jpg",
+    "image_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/4/40/Foto_oficial_de_Luiz_In%C3%A1cio_Lula_da_Silva_%28estreita%29.jpg/250px-Foto_oficial_de_Luiz_In%C3%A1cio_Lula_da_Silva_%28estreita%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail"
+  },
+  "Flávio Bolsonaro": {
+    "file": "candidate_4.jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:Foto_oficial_do_senador_Fl%C3%A1vio_Bolsonaro_(v._AgSen).jpg",
+    "credit": "Agência Senado",
+    "license": "Attribution",
+    "title": "File:Foto oficial do senador Flávio Bolsonaro (v. AgSen).jpg",
+    "image_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/a/ad/Foto_oficial_do_senador_Fl%C3%A1vio_Bolsonaro_%28v._AgSen%29.jpg/250px-Foto_oficial_do_senador_Fl%C3%A1vio_Bolsonaro_%28v._AgSen%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail"
+  },
+  "Manuel Flores": {
+    "file": "candidate_5.jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:Manuel_%22Chino%22_Flores_(September_2023).jpg",
+    "credit": "Tribunal Supremo Electoral El Salvador",
+    "license": "Public domain",
+    "title": "File:Manuel \"Chino\" Flores (September 2023).jpg",
+    "image_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/6/67/Manuel_%22Chino%22_Flores_%28September_2023%29.jpg/250px-Manuel_%22Chino%22_Flores_%28September_2023%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail"
+  },
+  "Joel Sánchez": {
+    "file": "candidate_6.jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:Joel_S%C3%A1nchez_(2023).jpg",
+    "credit": "Tribunal Supremo Electoral El Salvador",
+    "license": "Public domain",
+    "title": "File:Joel Sánchez (2023).jpg",
+    "image_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/2/21/Joel_S%C3%A1nchez_%282023%29.jpg/250px-Joel_S%C3%A1nchez_%282023%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail"
+  }
+}

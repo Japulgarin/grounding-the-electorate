@@ -1,0 +1,63 @@
+<!doctype html><html><head><meta charset="utf-8"><script src="d3.min.js"></script>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Newsreader:opsz,wght@6..72,500&display=swap"><style>
+body{margin:0;font:13px 'Inter','Segoe UI',sans-serif;color:#1c1917;background:#fff;font-variant-numeric:tabular-nums}
+#maps{display:flex;gap:16px}.map{flex:1;min-width:0;background:#f7f4ee;border:0;border-radius:14px;overflow:hidden}
+.toolbar{display:flex;align-items:center;justify-content:space-between;padding:18px 24px 14px;background:#fff;border-bottom:1px solid #e0d9cd}
+.label{font-family:'Newsreader',Georgia,serif;font-size:22px;font-weight:500;display:flex;flex-direction:column;gap:3px}.label small{font-family:'Inter',sans-serif;font-size:12px;color:#57534e;font-weight:400}
+.zoom{display:flex;gap:5px}.zoom button{margin:0;background:#fff;color:#263544;font-size:16px;width:32px;height:32px;padding:0;border:1px solid #dfe3e8;border-radius:5px}
+svg{width:100%;display:block}path.region{stroke:#fff;stroke-width:1.1;stroke-linejoin:round;cursor:pointer;vector-effect:non-scaling-stroke;transition:filter .12s}
+path.region:hover{filter:brightness(1.08);stroke:#263544;stroke-width:2}path.region:focus-visible{stroke:#202733;stroke-width:3;outline:none}
+path.region.selected{stroke:#1c1917;stroke-width:2.6}
+text.state-label{font-size:10px;font-weight:600;fill:#243445;paint-order:stroke;stroke:#ffffffb3;stroke-width:2.5px;pointer-events:none;text-anchor:middle;dominant-baseline:central}
+#tooltip{position:fixed;background:#fff;color:#1c1917;border:1px solid #e7e2d9;padding:12px 16px;border-radius:12px;box-shadow:0 3px 14px #2434451a;pointer-events:none;display:none;z-index:10;white-space:pre-line;max-width:280px;line-height:1.65}
+button{background:#0f5132;color:#fff;border:0;border-radius:9px;padding:8px 12px;margin:10px 6px 0 0;cursor:pointer;touch-action:manipulation}
+button:hover{filter:brightness(.94)}button:focus-visible{outline:2px solid #0f5132;outline-offset:3px}
+.hint{font-size:12px;color:#57534e;padding:0 24px 12px;background:#fff}
+.legend{display:flex;gap:18px;flex-wrap:wrap;justify-content:center;padding:14px 24px 12px;background:#fff;border-top:1px solid #e0d9cd}
+.legend-item{display:flex;align-items:center;gap:7px;font-size:11px}.swatch{width:9px;height:9px;border-radius:2px}.ramp{width:44px;height:5px;border-radius:2px}#controls{display:none}
+@media(max-width:650px){#maps{flex-direction:column}.toolbar{padding:12px}.label{font-size:14px}.legend{gap:12px;padding-inline:12px}.hint{padding-inline:12px}text.state-label{font-size:12px}}
+@media(prefers-reduced-motion:reduce){*{transition:none!important}}
+</style></head><body><div id="maps"></div><div id="controls"><button id="play"></button><button id="pause"></button><span id="stage"></span></div><div id="tooltip"></div>
+<script>
+const send=(type,data={})=>parent.postMessage({isStreamlitMessage:true,type,...data},'*');
+let args, timer, sequence=0;
+const tip=document.querySelector('#tooltip');
+function height(){send('streamlit:setFrameHeight',{height:document.body.scrollHeight+8})}
+function color(row){if(!row || !row.n)return '#dce4e8'; const vals=row.values;const ranked=[...vals].sort((a,b)=>b-a);if(Math.abs(ranked[0]-ranked[1])<1e-8)return '#b7c4cd';const winner=vals.indexOf(ranked[0]);return d3.interpolateRgb('#eef2f5',args.colors[winner])(.25+.75*Math.min(1,(ranked[0]-ranked[1])/60))}
+function paint(rows){d3.select('#maps').selectAll('path').transition().duration(matchMedia('(prefers-reduced-motion: reduce)').matches?0:700).attr('fill',d=>color(rows[d.properties.id]));}
+function panel(label, rows, difference=false){
+ const div=d3.select('#maps').append('div').attr('class','map');const toolbar=div.append('div').attr('class','toolbar');const title=toolbar.append('div').attr('class','label');title.append('span').text(args.title);title.append('small').text(label+(difference?' / Δ pp':''));const controls=toolbar.append('div').attr('class','zoom');
+ const selected=args.geo.features.find(f=>f.properties.id===args.selected);
+ if(args.focus&&selected){const crumb=div.append('div').style('padding','10px 20px').style('background','#f2f8f5').style('display','flex').style('align-items','center').style('gap','12px');crumb.append('button').text('← '+args.national).style('margin','0').on('click',()=>send('streamlit:setComponentValue',{value:{reset:true,sequence:Date.now()},dataType:'json'}));crumb.append('strong').text(selected.properties.name)}
+ const svg=div.append('svg').attr('viewBox','0 0 900 440').attr('role','img').attr('aria-label',label);
+ const projection=args.country==='usa'&&!args.focus?d3.geoAlbersUsa():d3.geoMercator();projection.fitExtent([[36,18],[864,422]],args.focus&&selected?selected:args.geo);
+ const group=svg.append('g');const zoom=d3.zoom().scaleExtent([1,5]).on('zoom',e=>group.attr('transform',e.transform));svg.call(zoom).on('wheel.zoom',null);
+ controls.append('button').text('↺').attr('aria-label','Reset zoom').on('click',()=>svg.transition().duration(matchMedia('(prefers-reduced-motion: reduce)').matches?0:220).call(zoom.transform,d3.zoomIdentity));
+ const path=d3.geoPath(projection);const scale=d3.scaleDiverging(d3.interpolateRdBu).domain([args.limit,0,-args.limit]);
+ const visible=args.focus&&selected?[selected]:args.geo.features;
+ group.selectAll('path').data(visible).join('path').attr('d',path).attr('tabindex',0).attr('role','button').attr('aria-label',d=>d.properties.name)
+ .attr('class',d=>'region '+(d.properties.id===args.selected?'selected':''))
+ .attr('fill',d=>difference?(rows[d.properties.id]?scale(rows[d.properties.id].delta):'#dce4e8'):color(rows[d.properties.id]))
+ .on('click',(event,d)=>{send('streamlit:setComponentValue',{value:{region:d.properties.id,sequence:Date.now()},dataType:'json'})})
+ .on('keydown',(event,d)=>{if(event.key==='Enter'||event.key===' '){event.preventDefault();send('streamlit:setComponentValue',{value:{region:d.properties.id,sequence:Date.now()},dataType:'json'})}})
+ .on('mousemove',(event,d)=>{const row=rows[d.properties.id];tip.style.display='block';tip.style.left=Math.min(event.clientX+12,innerWidth-240)+'px';tip.style.top=Math.min(event.clientY+12,innerHeight-150)+'px';tip.textContent=d.properties.name+'\n'+(row?(difference?row.delta.toFixed(2)+' pp':args.candidates.map((c,i)=>c+': '+row.values[i].toFixed(1)+'%').join('\n'))+'\nn = '+row.n:args.empty)})
+ .on('mouseleave',()=>tip.style.display='none');
+ const br={ 'Acre':'AC','Alagoas':'AL','Amapá':'AP','Amazonas':'AM','Bahia':'BA','Ceará':'CE','Distrito Federal':'DF','Espírito Santo':'ES','Goiás':'GO','Maranhão':'MA','Mato Grosso':'MT','Mato Grosso do Sul':'MS','Minas Gerais':'MG','Pará':'PA','Paraíba':'PB','Paraná':'PR','Pernambuco':'PE','Piauí':'PI','Rio de Janeiro':'RJ','Rio Grande do Norte':'RN','Rio Grande do Sul':'RS','Rondônia':'RO','Roraima':'RR','Santa Catarina':'SC','São Paulo':'SP','Sergipe':'SE','Tocantins':'TO'};
+ group.selectAll('text').data(visible.filter(f=>path.area(f)>100)).join('text').attr('class','state-label').style('font-size',args.focus?'20px':null).attr('transform',d=>'translate('+path.centroid(d)+')').text(d=>args.focus?d.properties.name:args.country==='usa'?d.properties.id:args.country==='brazil'?br[d.properties.id]||d.properties.id:d.properties.name);
+ group.select('path.selected').raise();group.selectAll('text').raise();
+ const legend=div.append('div').attr('class','legend');
+ if(!difference){args.candidates.forEach((name,i)=>{const item=legend.append('div').attr('class','legend-item');item.append('span').attr('class','swatch').style('background',args.colors[i]);item.append('span').text(name);item.append('span').attr('class','ramp').style('background','linear-gradient(90deg,#edf2f5,'+args.colors[i]+')')})}else{legend.append('span').text('−'+args.limit+' pp');legend.append('span').style('width','180px').style('height','10px').style('background','linear-gradient(90deg,#2166ac,#f7f7f7,#b2182b)');legend.append('span').text('+'+args.limit+' pp')}
+ div.append('div').attr('class','hint').text(args.hint+(difference?'':' · 0–60 pp'));
+}
+window.addEventListener('message',e=>{if(e.data.type!=='streamlit:render')return;args=e.data.args;clearTimeout(timer);document.querySelector('#maps').replaceChildren();
+ if(!window.d3){document.querySelector('#maps').textContent='Map library could not load. Use the territory selector above.';height();return;}
+ // Tiny coastal polygons can have opposite planar/spherical winding. Normalize
+ // each polygon on the sphere so D3 never fills the rest of the world.
+ for(const f of args.geo.features){const polygons=f.geometry.type==='MultiPolygon'?f.geometry.coordinates:[f.geometry.coordinates];for(const coordinates of polygons){if(d3.geoArea({type:'Polygon',coordinates})>2*Math.PI){for(const ring of coordinates)ring.reverse()}}}
+ if(args.mode==='difference'){panel(args.label_b,args.diff,true)}else{panel(args.label_a,args.a);if(args.mode==='compare')panel(args.label_b,args.b)}
+ document.querySelector('#controls').style.display=args.mode==='animate'?'block':'none';document.querySelector('#play').textContent=args.play;document.querySelector('#pause').textContent=args.pause;
+ document.querySelector('#stage').textContent=args.label_a;document.querySelector('#play').onclick=()=>{clearTimeout(timer);paint(args.a);document.querySelector('#stage').textContent=args.label_a;timer=setTimeout(()=>{paint(args.b);document.querySelector('#stage').textContent=args.label_b},1000)};
+ document.querySelector('#pause').onclick=()=>{clearTimeout(timer);d3.selectAll('path').interrupt()};requestAnimationFrame(height);
+});
+new ResizeObserver(height).observe(document.body);send('streamlit:componentReady',{apiVersion:1});
+</script></body></html>

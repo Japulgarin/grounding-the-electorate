@@ -1,0 +1,146 @@
+{
+ "usa_demographic_en": {
+  "country": "usa",
+  "arm": "demographic",
+  "language": "en",
+  "requests": 206038,
+  "in_tok": 96725556,
+  "out_tok": 30866860,
+  "latency_s": 9730429.290182719
+ },
+ "usa_cultural_en": {
+  "country": "usa",
+  "arm": "cultural",
+  "language": "en",
+  "requests": 200023,
+  "in_tok": 114191269,
+  "out_tok": 30409898,
+  "latency_s": 9932779.497754097
+ },
+ "usa_persona_en": {
+  "country": "usa",
+  "arm": "persona",
+  "language": "en",
+  "requests": 200023,
+  "in_tok": 105150228,
+  "out_tok": 31357745,
+  "latency_s": 9937779.833975151
+ },
+ "usa_career_en": {
+  "country": "usa",
+  "arm": "career",
+  "language": "en",
+  "requests": 200440,
+  "in_tok": 127431313,
+  "out_tok": 33027241,
+  "latency_s": 12315589.904858237
+ },
+ "el_salvador_demographic_en": {
+  "country": "el_salvador",
+  "arm": "demographic",
+  "language": "en",
+  "requests": 50000,
+  "in_tok": 31214684,
+  "out_tok": 9920980,
+  "latency_s": 3144786.1232185154
+ },
+ "el_salvador_demographic_es": {
+  "country": "el_salvador",
+  "arm": "demographic",
+  "language": "es",
+  "requests": 50000,
+  "in_tok": 38762041,
+  "out_tok": 10848306,
+  "latency_s": 2719725.481891597
+ },
+ "el_salvador_cultural_en": {
+  "country": "el_salvador",
+  "arm": "cultural",
+  "language": "en",
+  "requests": 50000,
+  "in_tok": 36798551,
+  "out_tok": 10331383,
+  "latency_s": 2984675.9693158115
+ },
+ "el_salvador_cultural_es": {
+  "country": "el_salvador",
+  "arm": "cultural",
+  "language": "es",
+  "requests": 50000,
+  "in_tok": 44406068,
+  "out_tok": 9572532,
+  "latency_s": 3752325.289878657
+ },
+ "el_salvador_persona_en": {
+  "country": "el_salvador",
+  "arm": "persona",
+  "language": "en",
+  "requests": 50000,
+  "in_tok": 38415113,
+  "out_tok": 10708480,
+  "latency_s": 2777477.3954799925
+ },
+ "el_salvador_persona_es": {
+  "country": "el_salvador",
+  "arm": "persona",
+  "language": "es",
+  "requests": 50000,
+  "in_tok": 46436540,
+  "out_tok": 10546434,
+  "latency_s": 2933816.2722375235
+ },
+ "brazil_demographic_pt": {
+  "country": "brazil",
+  "arm": "demographic",
+  "language": "pt",
+  "requests": 50000,
+  "in_tok": 66441247,
+  "out_tok": 10458622,
+  "latency_s": 3714885.8495442104
+ },
+ "brazil_demographic_en": {
+  "country": "brazil",
+  "arm": "demographic",
+  "language": "en",
+  "requests": 50000,
+  "in_tok": 58052707,
+  "out_tok": 9201881,
+  "latency_s": 3162551.3447959586
+ },
+ "brazil_cultural_pt": {
+  "country": "brazil",
+  "arm": "cultural",
+  "language": "pt",
+  "requests": 50000,
+  "in_tok": 76119625,
+  "out_tok": 10180538,
+  "latency_s": 4436516.816719618
+ },
+ "brazil_cultural_en": {
+  "country": "brazil",
+  "arm": "cultural",
+  "language": "en",
+  "requests": 98885,
+  "in_tok": 130587016,
+  "out_tok": 19477321,
+  "latency_s": 18996577.88907204
+ },
+ "brazil_persona_pt": {
+  "country": "brazil",
+  "arm": "persona",
+  "language": "pt",
+  "requests": 51507,
+  "in_tok": 69076241,
+  "out_tok": 10705875,
+  "latency_s": 4962656.199114266
+ },
+ "brazil_persona_en": {
+  "country": "brazil",
+  "arm": "persona",
+  "language": "en",
+  "requests": 50000,
+  "in_tok": 60444593,
+  "out_tok": 9349420,
+  "latency_s": 3470452.794020757
+ }
+}
