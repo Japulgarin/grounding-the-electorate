@@ -45,13 +45,13 @@ USA adds a fourth arm, **career + Big Five**.
 | country | best arm | national error | regional structure |
 |---|---|---|---|
 | USA | Cultural background: Trump 298 EV, 92.2% of states correct (real 312 EV) | Trump popular vote −2.7 pp (47.1 vs 49.8) | r = 0.89–0.90 with real state shares |
-| El Salvador | Demographic · EN: Bukele 83.5% (real 84.6%) | −1.1 pp, but with **no** individual variation | r ≈ 0 (demographic); Flores r = 0.50–0.66 (persona arms) |
-| Brazil | — (no result yet) | — | — |
+| El Salvador | Demographic · EN: Bukele 82.8% (real 84.6%) | −1.8 pp (Spanish 94.2%) | Bukele r = 0.39 (demographic · EN, 29.8% Morazán to 98.9% San Salvador); Flores r = 0.40–0.63 (persona arms) |
+| Brazil | — (no result yet; election in October 2026) | — | — |
 
 - **H1₂ is supported.**
-  - Ranking and direction are right: state correlation 0.9 in the USA; the FMLN geography partly appears in El Salvador.
-  - Levels and gaps are wrong: Black voters get 1% Trump against ~13% real; Bukele falls to 54–70% in the persona arms.
-- **H1₁ is partly supported.** The USA is the most accurate case, but El Salvador's best national figure comes from an arm with no individual variation (04c), so it cannot count as accuracy.
+  - Ranking and direction are right: state correlation 0.9 in the USA; the FMLN geography points the right way in El Salvador (Flores r = 0.40–0.63).
+  - Levels and gaps are wrong: Black voters get 1% Trump against ~13% real; Bukele falls to 29–43% in the cultural and persona arms (Flores wins the cultural arms).
+- **H1₁ is partly supported.** The USA is the most accurate case; in El Salvador the English demographic arm is close nationally (82.8% vs 84.6%) with a moderate regional correlation (r = 0.39), but Spanish overshoots (94.2%) and persona text collapses Bukele's lead.
 
 **Missing.**
 - The Brazil comparison after October 2026: first round and a possible runoff.
@@ -72,19 +72,19 @@ USA adds a fourth arm, **career + Big Five**.
 
 | factor | USA | El Salvador | Brazil |
 |---|---|---|---|
-| + cultural background | **improves** (fixes LA, MI; 92.2% of states) | lowers Bukele to 60–70% (further from real) | Lula 80–84% |
-| + persona | **worsens** (flips 7 states to Harris) | lowers Bukele to 54–62% | Lula 80% |
+| + cultural background | **improves** (fixes LA, MI; 92.2% of states) | lowers Bukele to 36.6–43.2% (Flores wins) | Lula 80–84% (short), 87% (full) |
+| + persona | **worsens** (flips 7 states to Harris) | lowers Bukele to 28.8–32.9% | Lula 80% (short), 81–90% (full) |
 | + career + Big Five | no gain (269–269 tie) | — (no Big Five data) | — |
-| language (local vs English) | — | 18–33% of votes change; direction flips with persona text | 21–22% of votes change |
+| language (local vs English) | — | 18% (demographic), 24% (cultural), 36% (persona) of votes change; direction flips with persona text | 21–22% of votes change |
 | candidate order | — | **primacy**: Bukele 93.5% first vs 54.5% second | not tested (Lula always first) |
-| context length (full vs short) | — | — | EN demographic: Lula 74.8% full vs 80.9% short |
+| context length (full vs short) | — | — | Lula 75–90% full vs 69–84% short; 16–21% of votes change, never the winner |
 
 - H2₁ holds only for **cultural background in the USA**. The persona text pushes every country toward the candidate the model favours by default (Harris, Flores/Sánchez, Lula).
 - **H2₂ is strongly supported**: language and order effects are as large as, or larger than, the persona effects.
 
 **Limitation, not re-run.** The candidate order is fixed in every main arm (Bukele first in El Salvador, Lula first in Brazil). The primacy effect measured in El Salvador is reported as a limitation of the levels; comparisons between arms and languages stay valid because the order is the same in all of them.
 
-**Missing.** The full-context Brazil runs (persona arm, completion of the cultural arm, and a clean Portuguese demographic run). They are set up in `Brazil_Simulation_correcto.ipynb`.
+**Done (19 Sep 2026).** All full-context Brazil runs, 3 arms × PT/EN, 50,000 each.
 
 **Notebooks:** 02b, 02c, 04a, 04b, 05.
 
@@ -98,14 +98,11 @@ USA adds a fourth arm, **career + Big Five**.
 - **H3₁ (expected):** vote choice follows the proposals, whatever name they carry.
 
 **Test: candidate-label swap.**
-- The same 2,000 voters (seed 2026) answer twice, with the original and with the swapped candidate names; every proposal stays in place.
+- The same 2,000 voters (seed 2026) answer twice, with the original prompt and with the candidate names and stance labels swapped; every proposal stays in place. Repeated on 50,000 voters with the full programmes (demographic arm, PT).
 - H3₁ predicts that more than 50% of voters follow the proposals; exact binomial test.
 - The breakdown by original vote shows asymmetric loyalty.
 
-**Status.**
-- The recorded run is **invalid**: both programmes were attributed to Lula.
-- The swap function is fixed and the corrected run is ready (`RUN_CANDIDATE_SWAP` in 05; PT + EN; about $0.2 per language).
-- Indirect evidence: ≥ 98.6% of explanations cite proposal content, and 3–10% cite party or ideology (PT). This is weak support for H3₁.
+**Result.** 72.9% (PT) and 71.7% (EN) of the 2,000 voters keep the name; 76.0% of the 50,000 with full programmes. Exact binomial test of 'follows > 50%': p = 1 in every case. **H3₀ is supported, H3₁ rejected.** Explanations cite proposal content in ≥ 98.6% of cases: the model argues from the programmes but decides by the name. The first recorded swap was invalid (both programmes under 'Lula') and was redone.
 
 ### RQ4. Is the simulated vote **stable**, i.e. does it depend on the persona and not on sampling noise?
 
@@ -121,7 +118,7 @@ USA adds a fourth arm, **career + Big Five**.
 
 - **H5₀:** Same persona, same content, different language → same vote.
 - **H5₁:** Language changes individual votes and national shares.
-- **Evidence:** El Salvador, 18% of voters change in the demographic arm and 28–33% in the persona arms; Brazil, 21–22% in every arm. **H5₁ supported** (04a, 04b, 05).
+- **Evidence:** El Salvador, 18% of voters change in the demographic arm, 24% in the cultural and 36% in the persona arm; Brazil, 21–22% in every short arm. **H5₁ supported** (04a, 04b, 05).
 - **Open sub-question:** is it the language of the *instructions* or of the *persona text*? A 2 × 2 design (instructions EN/local × persona text EN/local) would separate the two.
 
 ### RQ6. Do synthetic voters form a **realistic electorate** or a set of **stereotypes**?
@@ -130,7 +127,7 @@ USA adds a fourth arm, **career + Big Five**.
 - **H6₁:** The model exaggerates cleavages: group gaps are too large and each group is pushed to its "typical" side.
 - **Evidence:**
   - USA: gaps 2–13× too large.
-  - El Salvador: the department range is 39–64 pp, against 15 pp in reality.
+  - El Salvador: the department range reaches 69 pp (demographic · EN, 29.8–98.9%), against 15 pp in reality; with cultural text Flores reaches 89–95% in Morazán against 14% real.
   - **H6₁ supported** (02c, 04c).
 - **Possible follow-up:** calibration (post-stratification of the simulated probabilities) to test whether the structure can be rescued once the level is corrected.
 
@@ -153,17 +150,16 @@ USA adds a fourth arm, **career + Big Five**.
 | E2 | Temperature 0 / 0.6 / 1 stability (100 × 3) + AZ/AL/VA reruns | done | RQ4 | 02a |
 | E3 | USA 4 arms × 200,023 personas | done | RQ1, RQ2, RQ6 | 02b, 02c |
 | E4 | TranslateGemma boundary translation, SV + Brazil | done | RQ5 (enabler) | 03 |
-| E5 | El Salvador EN/ES pilot (500) + full (50,000) demographic | done | RQ1, RQ5 | 04a |
-| E6 | El Salvador candidate order (1,000 × 4) | done (reported as a limitation) | RQ2 | 04a |
-| E7 | El Salvador cultural + persona × EN/ES (50,000) | done | RQ1, RQ2, RQ5, RQ6 | 04b, 04c |
+| E5 | El Salvador EN/ES pilot (500) + full (50,000) demographic, corrected sample (19 Sep 2026) | done | RQ1, RQ5 | 04a |
+| E6 | El Salvador candidate order (1,000 × 4; first sample, demographic-only prompts, within-persona comparison) | done (reported as a limitation) | RQ2 | 04a |
+| E7 | El Salvador cultural + persona × EN/ES (50,000), corrected sample (19 Sep 2026) | done | RQ1, RQ2, RQ5, RQ6 | 04b, 04c |
 | E8 | Brazil short context, 3 arms × PT/EN (50,000) | done | RQ2, RQ5 | 05 |
-| E9 | Brazil full context: demographic PT (clean re-run), cultural (completion), persona (new) | **to run** in `Brazil_Simulation_correcto.ipynb` | RQ2 | 05 |
-| E10 | Brazil candidate-label swap, corrected (PT + EN, 2,000) | **to run** in `Brazil_Simulation_correcto.ipynb` (recorded run invalid) | RQ3 | 05 |
+| E9 | Brazil full context: demographic PT (clean re-run), cultural (completion), persona (new) | done (3 arms × PT/EN, 50,000) | RQ2 | 05 |
+| E10 | Brazil candidate-label swap, corrected (names + stance labels; PT + EN 2,000; full PT 50,000) | done: 72–76% keep the name, H3₀ supported | RQ3 | 05 |
 | E11 | Brazil vs the real 2026 result (after October 2026) | pending the election | RQ1 | — |
 
 ## Suggested priority
 
-1. **E9 + E10** in `Brazil_Simulation_correcto.ipynb`: the missing full-context runs, then the corrected label swap. E10 answers RQ3, the main Brazil hypothesis.
-2. **E11**, as soon as the Brazilian result is published.
+1. **E11**, as soon as the Brazilian result is published.
 
 Out of scope by decision: comparing model sizes, re-running with a randomised candidate order, and testing medium/high reasoning (reasoning `low` is justified by cost and time).

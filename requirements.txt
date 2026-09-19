@@ -5,3 +5,4 @@ plotly>=6,<7
 pyarrow>=18
 shapely>=2,<3
 huggingface_hub>=0.30
+scipy>=1.11

@@ -27,15 +27,11 @@ st.markdown('<style>'+Path(__file__).with_name('explorer.css').read_text(encodin
 
 map_component=components.declare_component('electorate_map',path=str(Path(__file__).parent/'components'/'map'))
 GUIDE_RUNS=('usa_demographic_en','usa_cultural_en','usa_persona_en')
-# Before/after pair shown in the guide per country. El Salvador starts at cultural because its demographic arm is unlinked.
-GUIDE_PAIRS={'usa':('usa_demographic_en','usa_cultural_en'),'el_salvador':('el_salvador_cultural_es','el_salvador_persona_es'),'brazil':('brazil_demographic_pt','brazil_cultural_pt')}
+# Before/after pair shown in the guide per country: demographics only, then + cultural background.
+GUIDE_PAIRS={'usa':('usa_demographic_en','usa_cultural_en'),'el_salvador':('el_salvador_demographic_es','el_salvador_cultural_es'),'brazil':('brazil_demographic_pt','brazil_cultural_pt')}
 FLAGS={'en':'🇺🇸','es':'🇪🇸','pt':'🇧🇷','de':'🇩🇪'}
 LOCAL_LANGUAGE={'el_salvador':'es','brazil':'pt'}
 ADDED_FIELD={'cultural':'cultural_background','persona':'persona','career':'career_goals_and_ambitions'}
-# Verified 2026-09-18: these responses do not match the persona row their sv_{row} ID points to
-# (reason age matches 2% vs 85% for uuid-keyed arms). ES and EN agree with each other, so the
-# language comparison stays valid; profile, geography and cross-arm pairs do not.
-UNLINKED=set()  # every El Salvador run is keyed by uuid on the corrected PGM sample (2026-09-19); nothing to hide
 
 
 @st.cache_resource(show_spinner=False,max_entries=8)
@@ -227,11 +223,8 @@ def person_nav(ids, key):
 def persona_intro(pid, p, c, compact=False, status=None):
     region=p.get(c['region'],'')
     region=tu.STATE_NAME.get(region,region) if c is COUNTRIES['usa'] else region
-    # El Salvador's census-adjusted demographics were redrawn and conflict with municipality/occupation
-    # from the persona text; show only the fields the prompt used.
-    salvador=c is COUNTRIES['el_salvador']
-    place=region if salvador else ', '.join(str(x) for x in (p.get('city') or p.get('municipality'),region) if x)
-    facts={g('age'):p.get('age'),g('sex'):p.get('sex',p.get('gender')),g('education'):p.get('education_level',p.get('education')),g('occupation'):None if salvador else p.get('occupation')}
+    place=', '.join(str(x) for x in (p.get('city') or p.get('municipality'),region) if x)
+    facts={g('age'):p.get('age'),g('sex'):p.get('sex',p.get('gender')),g('education'):p.get('education_level',p.get('education')),g('occupation'):p.get('occupation')}
     if compact:
         line=' · '.join((f'{esc(k)} ' if k==g('age') else '')+esc(str(v).replace('_',' ')) for k,v in facts.items() if v not in (None,''))
         note=f'<em class="{status[0]}">● {esc(status[1])}</em>' if status else ''
@@ -255,8 +248,7 @@ def compare_pair(pid, run_a, run_b, c, label_a, label_b, added=True, intro_slot=
     (va,ra),(vb,rb)=response_of(da,c),response_of(db,c)
     changed=leader(va)!=leader(vb)
     with (intro_slot if intro_slot is not None else st.container()):
-        if {run_a,run_b}&UNLINKED:st.caption(tx('unlinked_profile'))
-        else:persona_intro(pid,db['profile'],c,compact,('changed' if changed else 'same',g('changed') if changed else g('same')) if compact else None)
+        persona_intro(pid,db['profile'],c,compact,('changed' if changed else 'same',g('changed') if changed else g('same')) if compact else None)
     if not compact:st.markdown(f'<span class="badge {"changed" if changed else "same"}">{esc(g("changed") if changed else g("same"))}</span>',unsafe_allow_html=True)
     for side,(column,label,values,reason) in enumerate(zip(st.columns(2),(label_a,label_b),(va,vb),(ra,rb))):
         with column:
@@ -518,7 +510,7 @@ ARM_COLORS={'demographic':'#57534e','cultural':'#0f5132','persona':'#5b3a8a','ca
 def evolution(pid,db):
     """Same persona across every linked context of the selected language, then the model's reason."""
     lang=RUNS[run_b]['language'];rows='';quotes=''
-    for r in [k for k,v in RUNS.items() if v['country']==country and v['language']==lang and k not in UNLINKED]:
+    for r in [k for k,v in RUNS.items() if v['country']==country and v['language']==lang]:
         d=load_detail(pid,r,version)
         if not d or not d['normalized']['valid']:continue
         vals,reason=response_of(d,cfg);w=leader(vals);arm=RUNS[r]['arm']
@@ -546,7 +538,7 @@ def ten_table(ids):
         moved=leader(va)!=leader(vb);changed+=moved
         p=db['profile'];region=p.get(cfg['region'],'');region=tu.STATE_NAME.get(region,region) if country=='usa' else region
         meta=' · '.join(esc(str(x).replace('_',' ')) for x in (f'#{len(rows)+1:02d}',p.get('age'),p.get('sex',p.get('gender'))) if x not in (None,''))
-        job='' if country=='el_salvador' else esc(str(p.get('occupation') or '').replace('_',' '))
+        job=esc(str(p.get('occupation') or '').replace('_',' '))
         status=f'<span class="status {"changed" if moved else "same"}">{esc(tx("changed_short") if moved else tx("same_short"))}</span>'
         reasons=f'<p title="{esc(ra)}"><b>A:</b>{esc(ra)}</p><p title="{esc(rb)}"><b>B:</b>{esc(rb)}</p>'
         rows.append(f'<div class="ten-row"><div class="ten-who"><img src="{robot(pid)}" alt="Robot"><div><b>{esc(region)}</b><small>{meta}</small><small>{job}</small></div></div>{seg(va)}<div class="ten-arrow">→</div>{seg(vb)}<div>{status}</div><div class="ten-reasons">{reasons}</div></div>')
@@ -568,8 +560,7 @@ def profile_view(pid,full=False):
     p=available['profile']
     if full:
         region=p.get(cfg['region'],'');region=tu.STATE_NAME.get(region,region) if country=='usa' else region
-        salvador=country=='el_salvador'  # census demographics redrawn there: show only prompt fields
-        facts=[f'{tx("age")} {p.get("age")}' if p.get('age') not in (None,'') else '',p.get('sex',p.get('gender')),p.get('education_level',p.get('education')),None if salvador else p.get('occupation'),None if salvador else p.get('city') or p.get('municipality')]
+        facts=[f'{tx("age")} {p.get("age")}' if p.get('age') not in (None,'') else '',p.get('sex',p.get('gender')),p.get('education_level',p.get('education')),p.get('occupation'),p.get('city') or p.get('municipality')]
         line=' · '.join(esc(str(f).replace('_',' ')) for f in facts if f not in (None,''))
         (hero_top if hero_top is not None else st).markdown(f'<div class="profile-hero"><img src="{robot(pid)}" alt="Robot"><div><h2>{esc(g("synthetic"))} · {esc(region)}</h2><div class="facts-line">{line}</div><div class="pid">{esc(pid)}</div></div></div>',unsafe_allow_html=True)
     else:
@@ -778,7 +769,7 @@ def data_view():
         rows=''.join(f'<div class="dq-row"><span class="dq-cat">{esc(label(k))}</span><div class="dq-bars"><i class="in" style="width:{r.input/top*100:.1f}%"></i><i class="off" style="width:{r.official/top*100:.1f}%"></i></div><span class="dq-num">{r.input:.1f}%<small>{r.official:.1f}%</small></span><span class="dq-diff">{r["diff"]:+.2f}</span></div>' for k,r in table.iterrows())
         cards+=f'<div class="dq-card"><div class="card-head"><div><h3>{esc(tx("var_"+var))}</h3></div><span class="tvd">TVD {res["tvd"]:.4f}</span></div><div class="dq-legend"><span><i class="in"></i>{esc(tx("col_input"))}</span><span><i class="off"></i>{esc(tx("col_official"))}</span><span>{esc(tx("col_diff"))}</span></div>{rows}</div>'
     st.markdown(f'<div class="dq-grid">{cards}</div>',unsafe_allow_html=True)
-    if which=='el_salvador':st.markdown(f'<div class="alert-invalid"><b>{esc(tx("sv_caveat_t"))}</b>{esc(tx("sv_caveat"))}</div>',unsafe_allow_html=True)
+    if which=='el_salvador':st.markdown(f'<div class="note"><b>{esc(tx("sv_caveat_t"))}.</b> {esc(tx("sv_caveat"))}</div>',unsafe_allow_html=True)
     if which=='usa':st.caption(tx('usa_state_note'))
     csv=pd.concat([res['table'].rename_axis('category').reset_index().assign(country=which,variable=var,tvd=res['tvd']) for var,res in result.items()])[['country','variable','category','input','official','diff','tvd']].rename(columns={'input':'input_pct','official':'official_pct','diff':'diff_pp'}).round(4).to_csv(index=False)
     st.download_button(tx('download_csv')+' · '+COUNTRIES[which]['label'],csv,file_name=f'personas_vs_census_{which}.csv',mime='text/csv',key='csv_'+which)
@@ -979,15 +970,15 @@ def about_view():
         st.markdown(f'<div class="callout">{esc(g("findings"))}</div>',unsafe_allow_html=True)
         about={
         'en':'This master’s thesis studies how synthetic NVIDIA Nemotron personas respond to electoral questions using gpt-oss-20b. It compares demographic profiles with cultural background and richer persona descriptions, across USA 2024, El Salvador 2024, and a Brazil 2026 scenario. The question is whether a plausible national total also contains plausible geographic and individual variation.',
-        'es':'Esta tesis de maestría estudia cómo personas sintéticas de NVIDIA Nemotron responden a preguntas electorales con gpt-oss-20b. Compara perfiles demográficos, contexto cultural y descripciones de persona en Estados Unidos 2024, El Salvador 2024 y un escenario de Brasil 2026. Un total nacional plausible no garantiza patrones geográficos e individuales plausibles.',
-        'pt':'Esta dissertação estuda como personas sintéticas NVIDIA Nemotron respondem a perguntas eleitorais com gpt-oss-20b. Compara perfis demográficos, contexto cultural e descrições de persona nos EUA 2024, El Salvador 2024 e num cenário do Brasil 2026. Um total nacional plausível não garante padrões geográficos e individuais plausíveis.',
-        'de':'Diese Masterarbeit untersucht, wie synthetische NVIDIA-Nemotron-Personen mit gpt-oss-20b auf Wahlfragen antworten. Sie vergleicht demografische Profile, kulturellen Hintergrund und Personenbeschreibungen für die USA 2024, El Salvador 2024 und ein Brasilien-Szenario 2026. Plausible nationale Ergebnisse garantieren keine plausiblen regionalen oder individuellen Muster.'}
+        'es':'Esta tesis de maestría estudia cómo personas sintéticas de NVIDIA Nemotron responden a preguntas electorales con gpt-oss-20b. Compara perfiles demográficos, contexto cultural y descripciones de persona en Estados Unidos 2024, El Salvador 2024 y un escenario de Brasil 2026. La pregunta es si un total nacional plausible también contiene una variación geográfica e individual plausible.',
+        'pt':'Esta dissertação estuda como personas sintéticas NVIDIA Nemotron respondem a perguntas eleitorais com gpt-oss-20b. Compara perfis demográficos, contexto cultural e descrições de persona nos EUA 2024, El Salvador 2024 e num cenário do Brasil 2026. A pergunta é se um total nacional plausível também contém variação geográfica e individual plausível.',
+        'de':'Diese Masterarbeit untersucht, wie synthetische NVIDIA-Nemotron-Personen mit gpt-oss-20b auf Wahlfragen antworten. Sie vergleicht demografische Profile, kulturellen Hintergrund und Personenbeschreibungen für die USA 2024, El Salvador 2024 und ein Brasilien-Szenario 2026. Die Frage ist, ob ein plausibles nationales Ergebnis auch plausible regionale und individuelle Unterschiede enthält.'}
         st.write(about[st.session_state.lang])
         st.markdown('**200,023 USA · 50,000 El Salvador · 50,000 Brazil** — documented input personas.')
         with st.expander(g('deep')):
             st.markdown((ROOT/'RESEARCH_QUESTIONS.md').read_text(encoding='utf-8'))
         with st.expander(g('methods')):
-            st.markdown('The main completed conditions are available here. Brazil partial full-context runs and the invalid label-swap run are excluded from the maps; the label swap is documented under Extra experiments. No new model calls are made.')
+            st.markdown(tx('methods_scope'))
             st.markdown('**Metrics.** Mean probability averages each candidate’s stated probability. Top-choice share counts unique largest probabilities; tied personas remain in the denominator and count toward no candidate. Sankey nodes include ties. USA national summaries use the project’s population weights. A/B map comparisons use valid matched identities only.')
             st.markdown('**Prompt provenance.** Checkpoints retain the response and generation configuration but generally not the complete submitted prompt. The prompt tab displays the current documented context, clearly identified as such.')
             st.markdown('**Palette.** Party-associated chart colors are design approximations, not certified brand hex values. [GOP](https://shop.gop.com/collections/republican-national-committee) · [Democrats](https://democrats.org/) · [TSE El Salvador](https://tse.gob.sv/publico/prensa/330) · [TSE Brazil](https://www.tse.jus.br/partidos).')
@@ -1059,7 +1050,7 @@ def _default_run():
     local=LOCAL_LANGUAGE.get(country,'en')
     for arm in ('demographic','cultural','persona'):
         for i,k in enumerate(run_ids):
-            if RUNS[k]['arm']==arm and RUNS[k]['language']==local and k not in UNLINKED:return i
+            if RUNS[k]['arm']==arm and RUNS[k]['language']==local:return i
     return 0
 default_b=_default_run()
 metric='probability'
@@ -1071,15 +1062,15 @@ if view=='election':
     else:
         with variantcol:
             with st.container(key='variant_row'):run_b=st.radio(tx('variant'),run_ids,index=default_b,format_func=run_label,horizontal=True,key='variant_'+country)
-    run_a=baseline(run_b) if baseline(run_b) not in UNLINKED else run_b
+    run_a=baseline(run_b)
 elif mode=='ten':
-    first_arm='cultural' if country=='el_salvador' else 'demographic'
+    first_arm='demographic'
     after_ids=[r for r in run_ids if RUNS[r]['arm'] not in ('demographic',first_arm)]
     with variantcol:
         with st.container(key='variant_row'):run_b=st.radio(tx('variant'),after_ids,format_func=run_label,horizontal=True,key='ten_'+country)
     run_a=next(k for k in run_ids if RUNS[k]['arm']==first_arm and RUNS[k]['language']==RUNS[run_b]['language'])
 else:
-    linked=[i for i,k in enumerate(run_ids) if k not in UNLINKED]
+    linked=list(range(len(run_ids)))
     default_a=linked[0];default_ab=next((i for i in linked if i!=default_a and RUNS[run_ids[i]]['arm']!='demographic'),default_b)
     x,y=st.columns(2)
     with x:
@@ -1088,7 +1079,6 @@ else:
         with st.container(key='variant_row_b'):run_b=st.radio('B · '+tx('scenario'),run_ids,index=default_ab,format_func=run_label,horizontal=True,key='run_b_'+country)
     metric='choice'  # vote share: each persona's top choice
 
-if ({run_b} if view=='election' else {run_a,run_b})&UNLINKED:st.warning(tx('unlinked_map'))
 if full_profile_page():
     footer();st.stop()
 
@@ -1102,9 +1092,7 @@ if view=='election':
         map_view(summary_b)
     with right:
         with st.container(key='persona_panel'):
-            if run_b in UNLINKED:
-                st.caption(tx('unlinked_map'))
-            elif st.session_state.get('map_focus_'+country):
+            if st.session_state.get('map_focus_'+country):
                 persona_list(b)
             elif country=='usa':
                 example_states(b)
