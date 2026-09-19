@@ -591,3 +591,14 @@ i.in{background:var(--pine)}i.off{background:#b9ad99}
 .st-key-case_card .answer{min-height:150px;box-sizing:border-box}
 @media(max-width:767px){.st-key-case_card .persona-intro.compact{min-height:0}.st-key-case_card .st-key-cases [data-testid=stRadioOption]{padding:8px 6px!important}}
 .st-key-case_card .st-key-cases,.st-key-case_card .st-key-cases [data-testid=stRadio],.st-key-case_card .st-key-cases [data-testid=stRadio]>div,.st-key-case_card .st-key-cases [data-testid=stElementContainer]{width:100%!important;max-width:100%!important}
+.lang-row>div:first-child b{display:block;line-height:1.3}
+/* phone: keep boxes apart when scrolling (buttons, cards and section cards never touch) */
+@media(max-width:767px){
+  .reason{margin-bottom:14px}
+  [class*="st-key-"][class*="_person_prev"],[class*="st-key-"][class*="_person_next"],.st-key-full_person_prev,.st-key-full_person_next{margin-top:6px}
+  .bench{display:flex;flex-direction:column;gap:14px}
+  .lang-row{margin:0}
+  .swap-col{margin-bottom:16px}
+  .answer{margin-bottom:10px}
+  .stButton{margin-top:4px}
+}

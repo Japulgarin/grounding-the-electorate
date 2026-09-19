@@ -94,6 +94,13 @@ def language_stats(country, version):
 
 
 @st.cache_data(show_spinner=False)
+def full_context_data():
+    """Brazil short vs full programmes, precomputed by tools/build_brazil_full.py (the full checkpoints are not shipped)."""
+    path=APP_DIR/'generated'/'brazil_full_context.json'
+    return json.loads(path.read_text(encoding='utf-8')) if path.exists() else None
+
+
+@st.cache_data(show_spinner=False)
 def swap_stats():
     """Corrected Brazil label swap (names and stance labels exchanged), per language, read from its checkpoints."""
     from scipy.stats import binomtest
@@ -860,6 +867,35 @@ def stability_view():
         compare_pair(pid,f'{exp}_{arm}_{local}',f'{exp}_{arm}_en',c,tx(arm)+' · '+local.upper(),tx(arm)+' · EN',added=False)
         person_nav(ids,'lang_person_'+exp)
     else:st.info(g('missing'))
+    full=full_context_data()
+    if full:
+        st.divider()
+        c=COUNTRIES['brazil'];lula_color=ink(c['colors'][0])
+        st.markdown(f'<div class="section-head"><h2>{esc(tx("full_test"))}</h2><p>{esc(tx("full_desc"))}</p></div>',unsafe_allow_html=True)
+        with st.expander(tx('what_is')):st.write(tx('full_explain'))
+        body=''
+        for r in full['arms']:
+            body+=(f'<div class="lang-row"><div><b>{esc(tx(r["arm"]))} · {r["lang"].upper()}</b><small>{r["n"]:,} {esc(tx("matched").lower())}</small></div>'
+                   f'<div><span class="big">{r["changed"]:.1f}%</span><small>{esc(tx("full_changed"))}</small></div>'
+                   f'<div><small>{esc(tx("full_lula"))}</small><div class="prob-row"><span style="color:{lula_color}">Lula</span><b>{r["lula_short"]:.1f}% → {r["lula_full"]:.1f}%</b></div>'
+                   f'<div class="prob-row"><span>Lula → Flávio</span><b>{r["lula_to_flavio"]:,}</b></div>'
+                   f'<div class="prob-row"><span>Flávio → Lula</span><b>{r["flavio_to_lula"]:,}</b></div></div></div>')
+        st.markdown(f'<div class="bench">{body}</div>',unsafe_allow_html=True)
+        st.markdown('#### '+tx('full_examples'))
+        arm=st.radio(tx('variant'),['demographic','cultural','persona'],format_func=tx,horizontal=True,key='seg_full_arm')
+        lang=st.radio(tx('full_test'),['pt','en'],format_func=lambda l:tx('swap_lang_'+l),horizontal=True,key='seg_full_lang',label_visibility='collapsed')
+        examples=full['examples'].get(f'{arm}_{lang}',[])
+        if examples:
+            e=examples[st.session_state.get('full_person',0)%len(examples)]
+            persona_intro(e['pid'],e['profile'],c,True,('changed',g('changed')))
+            for side,(column,key) in enumerate(zip(st.columns(2),('short','long'))):
+                answer=e['short' if key=='short' else 'full']
+                with column:
+                    card=answer_html(tx('full_'+key),answer['values'],c)
+                    if side:card=card.replace('class="answer"','class="answer b"',1)
+                    st.markdown(card+f'<div class="reason"><small>{esc(g("reason"))}</small><br>{esc(answer["reason"])}</div>',unsafe_allow_html=True)
+            person_nav(examples,'full_person')
+        else:st.info(g('missing'))
     st.divider()
     st.markdown(f'<div class="section-head"><h2>{esc(tx("swap_test"))}</h2><p>{esc(tx("swap_desc"))}</p></div>',unsafe_allow_html=True)
     with st.expander(tx('what_is')):st.write(tx('swap_explain'))
@@ -867,6 +903,9 @@ def stability_view():
     lula,flavio=tu.BR_CANDIDATES
     def line(programme,label,bad=False): return f'<div class="swap-line{" bad" if bad else ""}"><span>{esc(tx("programme_of"))} {esc(programme)}</span><span>{esc(tx("labelled"))} “{esc(label)}”</span></div>'
     s=swap_stats()
+    full=full_context_data()
+    if s and full and full.get('full_swap'):
+        s={**s,'full':full['full_swap']}
     if not s:
         st.info(tx('swap_pending'))
     else:
