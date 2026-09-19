@@ -602,3 +602,14 @@ i.in{background:var(--pine)}i.off{background:#b9ad99}
   .answer{margin-bottom:10px}
   .stButton{margin-top:4px}
 }
+@media(max-width:767px){
+  .scoreboard{margin:8px 0 18px}
+  .how-card{margin:6px 0 16px}
+  .board{margin:6px 0 18px}
+  .ex-card,.data-card,.card,.gpu-card,.fact-sheet,.flow-card{margin-bottom:16px}
+}
+/* info notes: the bold lead-in flows with the text instead of forming its own narrow column */
+.note{display:block;position:relative;padding-left:46px;margin:6px 0 18px}
+.note:before{position:absolute;left:16px;top:16px;margin:0}
+.note b{display:inline}
+.bench{margin-bottom:22px}
