@@ -35,7 +35,7 @@ ADDED_FIELD={'cultural':'cultural_background','persona':'persona','career':'care
 # Verified 2026-09-18: these responses do not match the persona row their sv_{row} ID points to
 # (reason age matches 2% vs 85% for uuid-keyed arms). ES and EN agree with each other, so the
 # language comparison stays valid; profile, geography and cross-arm pairs do not.
-UNLINKED={'el_salvador_demographic_es','el_salvador_demographic_en'}
+UNLINKED=set()  # every El Salvador run is keyed by uuid on the corrected PGM sample (2026-09-19); nothing to hide
 
 
 @st.cache_resource(show_spinner=False,max_entries=8)
@@ -95,11 +95,21 @@ def language_stats(country, version):
 
 @st.cache_data(show_spinner=False)
 def swap_stats():
-    """The recorded (flawed) Brazil label swap, read from its own checkpoints."""
-    lula=tu.BR_CANDIDATES[0]
-    original,swapped=(tu.read_checkpoint(tu.BR_CANDIDATE_CHANGE[k],tu.BR_CANDIDATES) for k in ('original','swapped'))
-    pair=original.loc[original.valid.astype(bool)].merge(swapped.loc[swapped.valid.astype(bool)],on='_id',suffixes=('_o','_s'))
-    return dict(n=len(pair),share_o=100*(pair[lula+'_o']>50).mean(),share_s=100*(pair[lula+'_s']>50).mean(),mean_o=pair[lula+'_o'].mean(),mean_s=pair[lula+'_s'].mean())
+    """Corrected Brazil label swap (names and stance labels exchanged), per language, read from its checkpoints."""
+    from scipy.stats import binomtest
+    lula,flavio=tu.BR_CANDIDATES
+    out={}
+    for lang in ('pt','en'):
+        paths=[tu.BR_LABEL_SWAP[(lang,c)] for c in ('original','swapped')]
+        if not all(p.exists() for p in paths):continue
+        o,w=(tu.read_checkpoint(p,tu.BR_CANDIDATES,cache=False) for p in paths)
+        pair=o.loc[o.valid.astype(bool),['_id','winner']].merge(w.loc[w.valid.astype(bool),['_id','winner']],on='_id',suffixes=('_o','_s'))
+        pair=pair.loc[pair.winner_o.isin(tu.BR_CANDIDATES)&pair.winner_s.isin(tu.BR_CANDIDATES)]
+        if pair.empty:continue
+        follows=pair.winner_o.map({lula:flavio,flavio:lula}).eq(pair.winner_s)
+        out[lang]=dict(n=len(pair),follow=100*follows.mean(),keep=100*(1-follows.mean()),p=binomtest(int(follows.sum()),len(pair),p=.5,alternative='greater').pvalue,
+                       lula_o=100*pair.winner_o.eq(lula).mean(),lula_s=100*pair.winner_s.eq(lula).mean())
+    return out
 
 
 if 'lang' not in st.session_state:
@@ -786,7 +796,7 @@ PIPE_ICONS=['<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-w
             '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><path d="M12 3l8 4.5v9L12 21l-8-4.5v-9z"/><path d="M12 12l8-4.5M12 12v9M12 12L4 7.5"/></svg>',
             '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><rect x="2" y="7" width="20" height="11" rx="2"/><circle cx="8" cy="12.5" r="3"/><circle cx="16" cy="12.5" r="3"/><path d="M4 18v2M20 18v2"/></svg>',
             '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12.5l5 5L20 6.5"/></svg>']
-GPU_ART='<svg class="gpu-art" viewBox="0 0 320 150" fill="none"><rect x="10" y="30" width="290" height="96" rx="10" fill="#1c1917"/><rect x="10" y="30" width="290" height="96" rx="10" stroke="#3a3531" stroke-width="2"/><rect x="24" y="44" width="262" height="68" rx="8" fill="#2a2622"/><circle cx="92" cy="78" r="26" fill="#0f5132"/><circle cx="92" cy="78" r="18" fill="#1c1917"/><circle cx="92" cy="78" r="6" fill="#95d4ac"/><circle cx="196" cy="78" r="26" fill="#0f5132"/><circle cx="196" cy="78" r="18" fill="#1c1917"/><circle cx="196" cy="78" r="6" fill="#95d4ac"/><rect x="40" y="126" width="120" height="8" rx="2" fill="#b9ad99"/><rect x="250" y="52" width="24" height="52" rx="4" fill="#3a3531"/><text x="160" y="24" text-anchor="middle" font-family="Inter,sans-serif" font-size="12" font-weight="600" fill="#57534e">RTX 6000 · 48 GB · 0,53 $/h</text></svg>'
+GPU_ART='<svg class="gpu-art" viewBox="0 0 320 150" fill="none"><rect x="10" y="30" width="290" height="96" rx="10" fill="#1c1917"/><rect x="10" y="30" width="290" height="96" rx="10" stroke="#3a3531" stroke-width="2"/><rect x="24" y="44" width="262" height="68" rx="8" fill="#2a2622"/><circle cx="92" cy="78" r="26" fill="#0f5132"/><circle cx="92" cy="78" r="18" fill="#1c1917"/><circle cx="92" cy="78" r="6" fill="#95d4ac"/><circle cx="196" cy="78" r="26" fill="#0f5132"/><circle cx="196" cy="78" r="18" fill="#1c1917"/><circle cx="196" cy="78" r="6" fill="#95d4ac"/><rect x="40" y="126" width="120" height="8" rx="2" fill="#b9ad99"/><rect x="250" y="52" width="24" height="52" rx="4" fill="#3a3531"/><text x="160" y="24" text-anchor="middle" font-family="Inter,sans-serif" font-size="12" font-weight="600" fill="#57534e">RTX A6000 · 48 GB · 0,53 $/h</text></svg>'
 
 
 def pipeline_view():
@@ -855,17 +865,27 @@ def stability_view():
     with st.expander(tx('what_is')):st.write(tx('swap_explain'))
     st.caption(tx('swap_hypotheses'))
     lula,flavio=tu.BR_CANDIDATES
-    st.markdown(f'<div class="alert-invalid"><b>{esc(tx("swap_invalid"))}</b> {esc(tx("swap_bug"))}</div>',unsafe_allow_html=True)
     def line(programme,label,bad=False): return f'<div class="swap-line{" bad" if bad else ""}"><span>{esc(tx("programme_of"))} {esc(programme)}</span><span>{esc(tx("labelled"))} “{esc(label)}”</span></div>'
-    intended=line('Lula',flavio)+line('Flávio',lula)
-    recorded=line('Lula','Lula')+line('Flávio',lula,True)+f'<div class="swap-line bad"><span>{esc(flavio)}</span><span>{esc(tx("no_programme"))}</span></div>'
-    st.markdown(f'<div class="swap-grid"><div class="swap-col"><h4>{esc(tx("swap_intended"))}</h4>{intended}</div><div class="swap-col"><h4>{esc(tx("swap_recorded"))}</h4>{recorded}</div></div>',unsafe_allow_html=True)
     s=swap_stats()
-    left,right=st.columns(2)
-    left.metric(tx('swap_numbers')+' · '+tx('original_prompt'),f'{s["share_o"]:.1f}%',help=f'n = {s["n"]:,} · mean probability {s["mean_o"]:.1f}%')
-    right.metric(tx('swap_numbers')+' · '+tx('flawed_swap'),f'{s["share_s"]:.1f}%',f'{s["share_s"]-s["share_o"]:+.1f} pp',delta_color='off',help=f'n = {s["n"]:,} · mean probability {s["mean_s"]:.1f}%')
-    st.caption(tx('swap_expected'))
-    st.info(tx('swap_status'))
+    if not s:
+        st.info(tx('swap_pending'))
+    else:
+        cols=st.columns(len(s))
+        for col,(lang,r) in zip(cols,s.items()):
+            name_wins=r['keep']>50
+            col.markdown(f'<div class="swap-col"><h4>{esc(tx("swap_lang_"+lang))}</h4>'
+                         f'<div class="swap-line"><span>{esc(tx("swap_keep_name"))}</span><span><b>{r["keep"]:.1f}%</b></span></div>'
+                         f'<div class="swap-line"><span>{esc(tx("swap_follow_programme"))}</span><span><b>{r["follow"]:.1f}%</b></span></div>'
+                         f'<div class="swap-line"><span>{esc(tx("swap_pairs"))}</span><span>{r["n"]:,}</span></div>'
+                         f'<div class="swap-line"><span>{esc(tx("swap_lula_share"))}</span><span>{r["lula_o"]:.1f}% → {r["lula_s"]:.1f}%</span></div>'
+                         f'<div class="swap-line"><span>{esc(tx("swap_pvalue"))}</span><span>{r["p"]:.3g}</span></div>'
+                         f'<p class="swap-verdict">{esc(tx("swap_verdict_name" if name_wins else "swap_verdict_programme"))}</p></div>',unsafe_allow_html=True)
+        st.caption(tx('swap_reading'))
+    with st.expander(tx('swap_first_run')):
+        st.write(tx('swap_bug'))
+        intended=line('Lula',flavio)+line('Flávio',lula)
+        recorded=line('Lula','Lula')+line('Flávio',lula,True)+f'<div class="swap-line bad"><span>{esc(flavio)}</span><span>{esc(tx("no_programme"))}</span></div>'
+        st.markdown(f'<div class="swap-grid"><div class="swap-col"><h4>{esc(tx("swap_intended"))}</h4>{intended}</div><div class="swap-col"><h4>{esc(tx("swap_recorded"))}</h4>{recorded}</div></div>',unsafe_allow_html=True)
 
 
 # ---------- about ----------

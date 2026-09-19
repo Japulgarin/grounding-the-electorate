@@ -59,6 +59,9 @@ RUN_LOG = {
     "brazil_short_portuguese_cultural.jsonl": {"runtime_min": 62.5, "pods": 2, "first_pass_errors": 1},
     "brazil_short_english_cultural.jsonl": {"runtime_min": 133.0, "pods": 2, "first_pass_errors": 605},
     "brazil_translation_phase1_missing_v2.jsonl": {"runtime_min": 43.7, "pods": 1, "first_pass_errors": 0},
+    # 19 September 2026: El Salvador top-up translation (corrected PGM sample), TranslateGemma on 2 pods.
+    "sv_v2_phase1.jsonl": {"runtime_min": 10.1, "pods": 2, "first_pass_errors": 0},
+    "sv_v2_phase2.jsonl": {"runtime_min": 0.3, "pods": 2, "first_pass_errors": 0},
 }
 
 
@@ -584,7 +587,14 @@ SV_VALUE_MAPS = {
            "education_level": {"bachillerato": "bachillerato", "ninguno": "ninguno", "posgrado": "posgrado", "primaria": "primaria",
                                "secundaria": "secundaria", "tecnico": "técnico", "universitario": "universitario"}},
 }
-SV_CHECKPOINTS = {
+# El Salvador runs on the corrected PGM sample (es_SV_pgm_census_50k_v2*.parquet, 2026-09-19), all keyed by `uuid`.
+SV_PEOPLE_FILE = DATA_DIR / "es_SV_pgm_census_50k_v2_en.parquet"
+SV_CHECKPOINTS = {(arm, lang): RESULTS_DIR / f"el_salvador_v2_{arm}_{'english' if lang == 'en' else 'spanish'}.jsonl"
+                  for arm in ("demographic", "cultural", "persona") for lang in ("en", "es")}
+SV_PILOT_CHECKPOINTS = {lang: RESULTS_DIR / f"el_salvador_v2_pilot500_{'english' if lang == 'en' else 'spanish'}.jsonl" for lang in ("en", "es")}
+# Superseded runs on the first PGM sample, whose persona texts contradict their demographic columns (kept for the record only).
+SV_PEOPLE_FILE_V1 = DATA_DIR / "es_SV_pgm_census_50k.parquet"
+SV_CHECKPOINTS_V1 = {
     ("demographic", "en"): RESULTS_DIR / "el_salvador_50000_english.jsonl",
     ("demographic", "es"): RESULTS_DIR / "el_salvador_50000_spanish.jsonl",
     ("cultural", "en"): RESULTS_DIR / "sv_cultural_50k_english.jsonl",
@@ -592,7 +602,6 @@ SV_CHECKPOINTS = {
     ("persona", "en"): RESULTS_DIR / "sv_persona_50k_english.jsonl",
     ("persona", "es"): RESULTS_DIR / "sv_persona_50k_spanish.jsonl",
 }
-SV_PILOT_CHECKPOINTS = {"en": RESULTS_DIR / "el_salvador_500_english.jsonl", "es": RESULTS_DIR / "el_salvador_500_spanish.jsonl"}
 SV_PILOT_SIZE, SV_SEED = 500, 56060
 
 # VII Censo de Población y VI de Vivienda 2024 (BCR) and TSE Anexo 9-C, presidential results 2024.
@@ -625,8 +634,21 @@ def sv_real_shares(by_department=False):
 
 
 def load_sv_people(columns=None):
-    """The 50,000 PGM census-adjusted personas. Demographic runs use `sv_{row:05d}`, the others use `uuid`."""
-    people = pd.read_parquet(DATA_DIR / "es_SV_pgm_census_50k.parquet", columns=columns)
+    """The 50,000 personas of the corrected PGM sample, with their Spanish texts and English translations.
+
+    Every persona keeps its own demographics, so the demographic block and the persona text describe the same person.
+    All El Salvador runs are keyed by `uuid`, which is also `_source_id`.
+    """
+    columns = None if columns is None else list(dict.fromkeys(["uuid", *columns]))
+    people = pd.read_parquet(SV_PEOPLE_FILE, columns=columns)
+    people.insert(0, "_source_id", people["uuid"].astype(str))
+    return people
+
+
+def load_sv_people_v1(columns=None):
+    """The first PGM sample, keyed by row (`sv_{row:05d}`). Used only by the candidate-order experiment,
+    whose demographic-only prompts were built from these rows."""
+    people = pd.read_parquet(SV_PEOPLE_FILE_V1, columns=columns)
     people.insert(0, "_source_id", [f"sv_{i:05d}" for i in range(len(people))])
     return people
 
@@ -649,8 +671,8 @@ def load_sv_run(arm, language, people=None):
     """One El Salvador arm joined to the persona demographics (keyed by `uuid`)."""
     people = people if people is not None else load_sv_people(["uuid", *SV_DEMOGRAPHIC_COLS, "area"])
     votes = read_checkpoint(SV_CHECKPOINTS[(arm, language)], SV_CANDIDATES)
-    key = "_source_id" if arm == "demographic" else "uuid"
-    merged = people.merge(votes.rename(columns={"_id": key}), on=key, how="inner", validate="one_to_one")
+    people = people.drop(columns=["_source_id"], errors="ignore")
+    merged = people.merge(votes.rename(columns={"_id": "uuid"}), on="uuid", how="inner", validate="one_to_one")
     merged["arm"], merged["language"] = arm, language
     return merged
 
@@ -707,10 +729,16 @@ BR_ARMS = ["demographic", "cultural", "persona"]
 BR_LANGUAGE_NAME = {"pt": "portuguese", "en": "english"}
 BR_CHECKPOINTS = {
     **{("short", arm, lang): DATA_DIR / f"brazil_short_{BR_LANGUAGE_NAME[lang]}_{arm}.jsonl" for arm in BR_ARMS for lang in ("pt", "en")},
-    **{("full", arm, lang): RESULTS_DIR / f"brazil_full_{BR_LANGUAGE_NAME[lang]}_{arm}.jsonl" for arm in ("demographic", "cultural") for lang in ("pt", "en")},
+    # Full election context; the Portuguese demographic run was redone (`_v2`) because the first one used an older prompt.
+    **{("full", arm, lang): RESULTS_DIR / f"brazil_full_{BR_LANGUAGE_NAME[lang]}_{arm}{'_v2' if (arm, lang) == ('demographic', 'pt') else ''}.jsonl"
+       for arm in BR_ARMS for lang in ("pt", "en")},
 }
+# Candidate-label swap, persona arm, short context, 2,000 personas. The recorded PT "swapped" run is flawed (only the full
+# names were exchanged); the corrected swap exchanges names and stance labels (`swap_candidate_labels`).
 BR_CANDIDATE_CHANGE = {"original": DATA_DIR / "brazil_candidate_change_pt_original_2000.jsonl",
                        "swapped": DATA_DIR / "brazil_candidate_change_pt_swapped_2000.jsonl"}
+BR_LABEL_SWAP = {(lang, condition): DATA_DIR / f"brazil_candidate_change_{lang}_{label}_2000.jsonl"
+                 for lang in ("pt", "en") for condition, label in (("original", "original"), ("swapped", "swapped_fixed"))}
 BR_CANDIDATE_CHANGE_N, BR_CANDIDATE_CHANGE_SEED = 2_000, 2026
 
 # IBGE, Censo Demográfico 2022: population by federative unit (total 203,080,756; 51.5% women).
