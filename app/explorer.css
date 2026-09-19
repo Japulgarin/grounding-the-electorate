@@ -613,3 +613,10 @@ i.in{background:var(--pine)}i.off{background:#b9ad99}
 .note:before{position:absolute;left:16px;top:16px;margin:0}
 .note b{display:inline}
 .bench{margin-bottom:22px}
+/* Extra experiments: choose one experiment (same pill look as the other segmented controls) */
+.st-key-seg_extra [role=radiogroup]{display:inline-flex;gap:4px;background:var(--sand);border:1px solid var(--line);border-radius:12px;padding:4px;min-height:0;flex-wrap:wrap;margin-bottom:10px}
+.st-key-seg_extra [data-testid=stRadioOption]{padding:9px 18px!important;border:0!important;border-radius:9px;margin:0}
+.st-key-seg_extra [data-testid=stRadioOption] p{font-size:15px;color:var(--ink-2)}
+.st-key-seg_extra [data-testid=stRadioOption][data-selected=true]{background:var(--surface);box-shadow:0 1px 3px rgba(44,34,25,.1)}
+.st-key-seg_extra [data-testid=stRadioOption][data-selected=true] p{color:var(--pine);font-weight:600}
+@media(max-width:767px){.st-key-seg_extra [role=radiogroup]{display:flex}.st-key-seg_extra [data-testid=stRadioOption]{flex:1 1 100%;justify-content:center}}

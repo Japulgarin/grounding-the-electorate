@@ -315,3 +315,9 @@ TEXT.update({
               'Calculado com os tokens realmente processados nas 28 execuções finais (EUA, El Salvador com a amostra corrigida, Brasil com programas curtos e completos, e as trocas de rótulos). Pagar por token por meio de uma API (preço da OpenRouter para gpt-oss-20b: US$ 0,05 por milhão de tokens de entrada e US$ 0,10 por milhão de saída) é comparado com o tempo teórico nas duas GPUs alugadas (cerca de 20 respostas por segundo, US$ 0,53 por hora por pod).',
               'Berechnet aus den tatsächlich verarbeiteten Tokens der 28 finalen Läufe (USA, El Salvador mit der korrigierten Stichprobe, Brasilien mit kurzen und vollständigen Programmen sowie die Namenstausch-Tests). Die Bezahlung pro Token über eine API (OpenRouter-Preis für gpt-oss-20b: 0,05 $ pro Million Eingabe-Tokens, 0,10 $ pro Million Ausgabe-Tokens) wird mit der theoretischen Zeit auf den zwei gemieteten GPUs verglichen (etwa 20 Antworten pro Sekunde, 0,53 $ pro Stunde und Pod).'),
 })
+TEXT.update({
+'extra_pick': ('Choose an experiment','Elige un experimento','Escolha um experimento','Experiment wählen'),
+'extra_lang': ('Same persona, another language','Misma persona, otro idioma','Mesma persona, outro idioma','Gleiche Person, andere Sprache'),
+'extra_full': ('Short vs full programmes','Programas cortos vs completos','Programas curtos vs completos','Kurze vs. vollständige Programme'),
+'extra_swap': ('Swapping the proposals','Intercambio de propuestas','Troca de propostas','Programme vertauscht'),
+})

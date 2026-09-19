@@ -146,3 +146,21 @@ for _lang,_c in COPY.items():
     _c['bodies'][5]=_body+'.'
     _c['reopen_note']=_note
     _c.update(_EXTRA[_lang])
+
+# Findings, rewritten after the corrected runs (19 Sep 2026): persona text creates diverse voters.
+COPY['en']['findings'] = ('Richer personas create a far more diverse electorate. With demographics alone the model gives almost everyone the same few answers; '
+                          'with the cultural background or the full persona, votes spread across candidates, groups and regions, and every explanation fits its voter. '
+                          'That diversity does not reproduce the real result, but it makes persona prompts a useful tool for other experiments that need varied, '
+                          'plausible voters, such as testing how different kinds of people react to a message, an issue or a programme.')
+COPY['es']['findings'] = ('Las personas más ricas crean un electorado mucho más diverso. Solo con datos demográficos el modelo da casi a todos las mismas pocas respuestas; '
+                          'con el trasfondo cultural o la persona completa, los votos se reparten entre candidatos, grupos y regiones, y cada explicación encaja con su votante. '
+                          'Esa diversidad no reproduce el resultado real, pero convierte los prompts con persona en una herramienta útil para otros experimentos que necesiten '
+                          'votantes variados y verosímiles, por ejemplo probar cómo reaccionan distintos tipos de personas a un mensaje, un tema o un programa.')
+COPY['pt']['findings'] = ('Personas mais ricas criam um eleitorado muito mais diverso. Só com dados demográficos o modelo dá quase a todos as mesmas poucas respostas; '
+                          'com o contexto cultural ou a persona completa, os votos se distribuem entre candidatos, grupos e regiões, e cada explicação combina com seu eleitor. '
+                          'Essa diversidade não reproduz o resultado real, mas torna os prompts com persona uma ferramenta útil para outros experimentos que precisem de '
+                          'eleitores variados e plausíveis, por exemplo testar como diferentes tipos de pessoas reagem a uma mensagem, um tema ou um programa.')
+COPY['de']['findings'] = ('Reichere Personen erzeugen eine viel vielfältigere Wählerschaft. Nur mit demografischen Angaben gibt das Modell fast allen dieselben wenigen Antworten; '
+                          'mit kulturellem Hintergrund oder vollständiger Persona verteilen sich die Stimmen über Kandidaten, Gruppen und Regionen, und jede Begründung passt zu ihrer Person. '
+                          'Diese Vielfalt bildet das reale Ergebnis nicht nach, macht Persona-Prompts aber zu einem nützlichen Werkzeug für andere Experimente, die vielfältige, '
+                          'plausible Wähler brauchen, etwa um zu testen, wie verschiedene Menschen auf eine Botschaft, ein Thema oder ein Programm reagieren.')

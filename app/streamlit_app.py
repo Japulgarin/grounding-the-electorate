@@ -825,7 +825,6 @@ def pipeline_view():
     st.markdown(f'<div class="section-head small"><h3>{esc(tx("tr_title"))}</h3><p>{esc(tx("tr_text"))}</p></div>',unsafe_allow_html=True)
     tr=[('98.3%',tx('tr_sv')),('99.6%',tx('tr_br')),('100%',tx('tr_final')),('43.7 min',tx('tr_time'))]
     st.markdown('<div class="mini-stats">'+''.join(f'<div><b>{esc(v)}</b><small>{esc(k)}</small></div>' for v,k in tr)+'</div>',unsafe_allow_html=True)
-    st.markdown(f'<div class="note">{esc(tx("tr_lesson"))}</div>',unsafe_allow_html=True)
     # Cost: from the tokens actually processed (06_summary_costs.ipynb prices and throughput rule)
     st.markdown(f'<div class="section-head small"><h3>{esc(tx("cost_title"))}</h3><p>{esc(tx("cost_text"))}</p></div>',unsafe_allow_html=True)
     cs=json.loads((APP_DIR/'generated'/'cost_summary.json').read_text(encoding='utf-8'))
@@ -849,82 +848,85 @@ def pipeline_view():
 # ---------- research: stability tests ----------
 
 def stability_view():
-    st.markdown(f'<div class="section-head"><h2>{esc(tx("lang_test"))}</h2><p>{esc(tx("lang_test_desc"))}</p></div>',unsafe_allow_html=True)
-    with st.expander(tx('what_is')):st.write(tx('lang_explain'))
-    exp=st.radio(tx('lang_test'),['el_salvador','brazil'],format_func=lambda k:COUNTRIES[k]['label']+' · '+LOCAL_LANGUAGE[k].upper()+' → EN',horizontal=True,key='seg_lang_country',label_visibility='collapsed')
-    c=COUNTRIES[exp];local=LOCAL_LANGUAGE[exp]
-    rows=language_stats(exp,version)
-    body=''
-    for r in rows:
-        means=''.join(f'<div class="prob-row"><span style="color:{ink(c["colors"][i])}">{esc(name)}</span><b>{r["local"][i]:.1f}% → {r["en"][i]:.1f}%</b></div>' for i,name in enumerate(c['candidates']))
-        body+=f'<div class="lang-row"><div><b>{esc(tx(r["arm"]))}</b><small>{r["n"]:,} {esc(tx("matched").lower())}</small></div><div><span class="big">{r["changed"]:.1f}%</span><small>{esc(tx("lang_changed"))}</small></div><div><small>{esc(tx("lang_means"))}</small>{means}</div></div>'
-    st.markdown(f'<div class="bench">{body}</div>',unsafe_allow_html=True)
-    st.markdown('#### '+tx('lang_examples'))
-    arm=st.radio(tx('variant'),['demographic','cultural','persona'],format_func=tx,horizontal=True,key='seg_lang_arm')
-    ids=sample_ids((f'{exp}_{arm}_{local}',f'{exp}_{arm}_en'),version)
-    if ids:
-        pid=ids[st.session_state.get('lang_person_'+exp,0)%len(ids)]
-        compare_pair(pid,f'{exp}_{arm}_{local}',f'{exp}_{arm}_en',c,tx(arm)+' · '+local.upper(),tx(arm)+' · EN',added=False)
-        person_nav(ids,'lang_person_'+exp)
-    else:st.info(g('missing'))
-    full=full_context_data()
-    if full:
-        st.divider()
-        c=COUNTRIES['brazil'];lula_color=ink(c['colors'][0])
-        st.markdown(f'<div class="section-head"><h2>{esc(tx("full_test"))}</h2><p>{esc(tx("full_desc"))}</p></div>',unsafe_allow_html=True)
-        with st.expander(tx('what_is')):st.write(tx('full_explain'))
+    # One experiment at a time: the buttons choose which one is shown.
+    pick=st.radio(tx('extra_pick'),['lang','full','swap'],format_func=lambda k:tx('extra_'+k),horizontal=True,key='seg_extra',label_visibility='collapsed')
+    if pick=='lang':
+        st.markdown(f'<div class="section-head"><h2>{esc(tx("lang_test"))}</h2><p>{esc(tx("lang_test_desc"))}</p></div>',unsafe_allow_html=True)
+        with st.expander(tx('what_is')):st.write(tx('lang_explain'))
+        exp=st.radio(tx('lang_test'),['el_salvador','brazil'],format_func=lambda k:COUNTRIES[k]['label']+' · '+LOCAL_LANGUAGE[k].upper()+' → EN',horizontal=True,key='seg_lang_country',label_visibility='collapsed')
+        c=COUNTRIES[exp];local=LOCAL_LANGUAGE[exp]
+        rows=language_stats(exp,version)
         body=''
-        for r in full['arms']:
-            body+=(f'<div class="lang-row"><div><b>{esc(tx(r["arm"]))} · {r["lang"].upper()}</b><small>{r["n"]:,} {esc(tx("matched").lower())}</small></div>'
-                   f'<div><span class="big">{r["changed"]:.1f}%</span><small>{esc(tx("full_changed"))}</small></div>'
-                   f'<div><small>{esc(tx("full_lula"))}</small><div class="prob-row"><span style="color:{lula_color}">Lula</span><b>{r["lula_short"]:.1f}% → {r["lula_full"]:.1f}%</b></div>'
-                   f'<div class="prob-row"><span>Lula → Flávio</span><b>{r["lula_to_flavio"]:,}</b></div>'
-                   f'<div class="prob-row"><span>Flávio → Lula</span><b>{r["flavio_to_lula"]:,}</b></div></div></div>')
+        for r in rows:
+            means=''.join(f'<div class="prob-row"><span style="color:{ink(c["colors"][i])}">{esc(name)}</span><b>{r["local"][i]:.1f}% → {r["en"][i]:.1f}%</b></div>' for i,name in enumerate(c['candidates']))
+            body+=f'<div class="lang-row"><div><b>{esc(tx(r["arm"]))}</b><small>{r["n"]:,} {esc(tx("matched").lower())}</small></div><div><span class="big">{r["changed"]:.1f}%</span><small>{esc(tx("lang_changed"))}</small></div><div><small>{esc(tx("lang_means"))}</small>{means}</div></div>'
         st.markdown(f'<div class="bench">{body}</div>',unsafe_allow_html=True)
-        st.markdown('#### '+tx('full_examples'))
-        arm=st.radio(tx('variant'),['demographic','cultural','persona'],format_func=tx,horizontal=True,key='seg_full_arm')
-        lang=st.radio(tx('full_test'),['pt','en'],format_func=lambda l:tx('swap_lang_'+l),horizontal=True,key='seg_full_lang',label_visibility='collapsed')
-        examples=full['examples'].get(f'{arm}_{lang}',[])
-        if examples:
-            e=examples[st.session_state.get('full_person',0)%len(examples)]
-            persona_intro(e['pid'],e['profile'],c,True,('changed',g('changed')))
-            for side,(column,key) in enumerate(zip(st.columns(2),('short','long'))):
-                answer=e['short' if key=='short' else 'full']
-                with column:
-                    card=answer_html(tx('full_'+key),answer['values'],c)
-                    if side:card=card.replace('class="answer"','class="answer b"',1)
-                    st.markdown(card+f'<div class="reason"><small>{esc(g("reason"))}</small><br>{esc(answer["reason"])}</div>',unsafe_allow_html=True)
-            person_nav(examples,'full_person')
+        st.markdown('#### '+tx('lang_examples'))
+        arm=st.radio(tx('variant'),['demographic','cultural','persona'],format_func=tx,horizontal=True,key='seg_lang_arm')
+        ids=sample_ids((f'{exp}_{arm}_{local}',f'{exp}_{arm}_en'),version)
+        if ids:
+            pid=ids[st.session_state.get('lang_person_'+exp,0)%len(ids)]
+            compare_pair(pid,f'{exp}_{arm}_{local}',f'{exp}_{arm}_en',c,tx(arm)+' · '+local.upper(),tx(arm)+' · EN',added=False)
+            person_nav(ids,'lang_person_'+exp)
         else:st.info(g('missing'))
-    st.divider()
-    st.markdown(f'<div class="section-head"><h2>{esc(tx("swap_test"))}</h2><p>{esc(tx("swap_desc"))}</p></div>',unsafe_allow_html=True)
-    with st.expander(tx('what_is')):st.write(tx('swap_explain'))
-    st.caption(tx('swap_hypotheses'))
-    lula,flavio=tu.BR_CANDIDATES
-    def line(programme,label,bad=False): return f'<div class="swap-line{" bad" if bad else ""}"><span>{esc(tx("programme_of"))} {esc(programme)}</span><span>{esc(tx("labelled"))} “{esc(label)}”</span></div>'
-    s=swap_stats()
-    full=full_context_data()
-    if s and full and full.get('full_swap'):
-        s={**s,'full':full['full_swap']}
-    if not s:
-        st.info(tx('swap_pending'))
+    elif pick=='full':
+        full=full_context_data()
+        if full:
+            c=COUNTRIES['brazil'];lula_color=ink(c['colors'][0])
+            st.markdown(f'<div class="section-head"><h2>{esc(tx("full_test"))}</h2><p>{esc(tx("full_desc"))}</p></div>',unsafe_allow_html=True)
+            with st.expander(tx('what_is')):st.write(tx('full_explain'))
+            body=''
+            for r in full['arms']:
+                body+=(f'<div class="lang-row"><div><b>{esc(tx(r["arm"]))} · {r["lang"].upper()}</b><small>{r["n"]:,} {esc(tx("matched").lower())}</small></div>'
+                       f'<div><span class="big">{r["changed"]:.1f}%</span><small>{esc(tx("full_changed"))}</small></div>'
+                       f'<div><small>{esc(tx("full_lula"))}</small><div class="prob-row"><span style="color:{lula_color}">Lula</span><b>{r["lula_short"]:.1f}% → {r["lula_full"]:.1f}%</b></div>'
+                       f'<div class="prob-row"><span>Lula → Flávio</span><b>{r["lula_to_flavio"]:,}</b></div>'
+                       f'<div class="prob-row"><span>Flávio → Lula</span><b>{r["flavio_to_lula"]:,}</b></div></div></div>')
+            st.markdown(f'<div class="bench">{body}</div>',unsafe_allow_html=True)
+            st.markdown('#### '+tx('full_examples'))
+            arm=st.radio(tx('variant'),['demographic','cultural','persona'],format_func=tx,horizontal=True,key='seg_full_arm')
+            lang=st.radio(tx('full_test'),['pt','en'],format_func=lambda l:tx('swap_lang_'+l),horizontal=True,key='seg_full_lang',label_visibility='collapsed')
+            examples=full['examples'].get(f'{arm}_{lang}',[])
+            if examples:
+                e=examples[st.session_state.get('full_person',0)%len(examples)]
+                persona_intro(e['pid'],e['profile'],c,True,('changed',g('changed')))
+                for side,(column,key) in enumerate(zip(st.columns(2),('short','long'))):
+                    answer=e['short' if key=='short' else 'full']
+                    with column:
+                        card=answer_html(tx('full_'+key),answer['values'],c)
+                        if side:card=card.replace('class="answer"','class="answer b"',1)
+                        st.markdown(card+f'<div class="reason"><small>{esc(g("reason"))}</small><br>{esc(answer["reason"])}</div>',unsafe_allow_html=True)
+                person_nav(examples,'full_person')
+            else:st.info(g('missing'))
     else:
-        cols=st.columns(len(s))
-        for col,(lang,r) in zip(cols,s.items()):
-            name_wins=r['keep']>50
-            col.markdown(f'<div class="swap-col"><h4>{esc(tx("swap_lang_"+lang))}</h4>'
-                         f'<div class="swap-line"><span>{esc(tx("swap_keep_name"))}</span><span><b>{r["keep"]:.1f}%</b></span></div>'
-                         f'<div class="swap-line"><span>{esc(tx("swap_follow_programme"))}</span><span><b>{r["follow"]:.1f}%</b></span></div>'
-                         f'<div class="swap-line"><span>{esc(tx("swap_pairs"))}</span><span>{r["n"]:,}</span></div>'
-                         f'<div class="swap-line"><span>{esc(tx("swap_lula_share"))}</span><span>{r["lula_o"]:.1f}% → {r["lula_s"]:.1f}%</span></div>'
-                         f'<div class="swap-line"><span>{esc(tx("swap_pvalue"))}</span><span>{r["p"]:.3g}</span></div>'
-                         f'<p class="swap-verdict">{esc(tx("swap_verdict_name" if name_wins else "swap_verdict_programme"))}</p></div>',unsafe_allow_html=True)
-        st.caption(tx('swap_reading'))
-    with st.expander(tx('swap_first_run')):
-        st.write(tx('swap_bug'))
-        intended=line('Lula',flavio)+line('Flávio',lula)
-        recorded=line('Lula','Lula')+line('Flávio',lula,True)+f'<div class="swap-line bad"><span>{esc(flavio)}</span><span>{esc(tx("no_programme"))}</span></div>'
-        st.markdown(f'<div class="swap-grid"><div class="swap-col"><h4>{esc(tx("swap_intended"))}</h4>{intended}</div><div class="swap-col"><h4>{esc(tx("swap_recorded"))}</h4>{recorded}</div></div>',unsafe_allow_html=True)
+        st.markdown(f'<div class="section-head"><h2>{esc(tx("swap_test"))}</h2><p>{esc(tx("swap_desc"))}</p></div>',unsafe_allow_html=True)
+        with st.expander(tx('what_is')):st.write(tx('swap_explain'))
+        st.caption(tx('swap_hypotheses'))
+        lula,flavio=tu.BR_CANDIDATES
+        def line(programme,label,bad=False): return f'<div class="swap-line{" bad" if bad else ""}"><span>{esc(tx("programme_of"))} {esc(programme)}</span><span>{esc(tx("labelled"))} “{esc(label)}”</span></div>'
+        s=swap_stats()
+        full=full_context_data()
+        if s and full and full.get('full_swap'):
+            s={**s,'full':full['full_swap']}
+        if not s:
+            st.info(tx('swap_pending'))
+        else:
+            cols=st.columns(len(s))
+            for col,(lang,r) in zip(cols,s.items()):
+                name_wins=r['keep']>50
+                col.markdown(f'<div class="swap-col"><h4>{esc(tx("swap_lang_"+lang))}</h4>'
+                             f'<div class="swap-line"><span>{esc(tx("swap_keep_name"))}</span><span><b>{r["keep"]:.1f}%</b></span></div>'
+                             f'<div class="swap-line"><span>{esc(tx("swap_follow_programme"))}</span><span><b>{r["follow"]:.1f}%</b></span></div>'
+                             f'<div class="swap-line"><span>{esc(tx("swap_pairs"))}</span><span>{r["n"]:,}</span></div>'
+                             f'<div class="swap-line"><span>{esc(tx("swap_lula_share"))}</span><span>{r["lula_o"]:.1f}% → {r["lula_s"]:.1f}%</span></div>'
+                             f'<div class="swap-line"><span>{esc(tx("swap_pvalue"))}</span><span>{r["p"]:.3g}</span></div>'
+                             f'<p class="swap-verdict">{esc(tx("swap_verdict_name" if name_wins else "swap_verdict_programme"))}</p></div>',unsafe_allow_html=True)
+            st.caption(tx('swap_reading'))
+        with st.expander(tx('swap_first_run')):
+            st.write(tx('swap_bug'))
+            intended=line('Lula',flavio)+line('Flávio',lula)
+            recorded=line('Lula','Lula')+line('Flávio',lula,True)+f'<div class="swap-line bad"><span>{esc(flavio)}</span><span>{esc(tx("no_programme"))}</span></div>'
+            st.markdown(f'<div class="swap-grid"><div class="swap-col"><h4>{esc(tx("swap_intended"))}</h4>{intended}</div><div class="swap-col"><h4>{esc(tx("swap_recorded"))}</h4>{recorded}</div></div>',unsafe_allow_html=True)
 
 
 # ---------- about ----------
